@@ -954,7 +954,7 @@
             if (dateVal.includes('.')) {
                 document.getElementById('h-reportPeriodText').innerText = `TÌNH HÌNH KHÁM CHỮA BỆNH, TAI NẠN, NGỘ ĐỘC\nDải ngày tổng hợp: ${dateVal}`;
             } else {
-                document.getElementById('h-reportPeriodText').innerText = `TÌNH HÌNH KHÁM CHỮA BỆNH, TAI NẠN, NGỘ ĐỘC\n Từ 07 giờ ngày ${fmt(yesterday)} đến 07 giờ ngày ${fmt(dateObj)}`;
+                document.getElementById('h-reportPeriodText').innerText = `TÌNH HÌNH KHÁM CHỮA BỆNH, TAI NẠN, NGỘ ĐỘC\n Từ 06 giờ ngày ${fmt(yesterday)} đến 06 giờ ngày ${fmt(dateObj)}`;
             }
         }
 
@@ -1186,7 +1186,7 @@
                 const d = new Date(val); const yesterday = new Date(d); yesterday.setDate(d.getDate() - 1);
                 const fmt = (dt) => `${dt.getDate().toString().padStart(2, '0')}/${(dt.getMonth() + 1).toString().padStart(2, '0')}/${dt.getFullYear()}`;
                 document.getElementById('currentDateString').innerText = `Cầu Ngang, ngày ${d.getDate()} tháng ${d.getMonth() + 1} năm ${d.getFullYear()}`;
-                document.getElementById('reportPeriodText').innerText = `TÌNH HÌNH KHÁM CHỮA BỆNH, TAI NẠN, NGỘ ĐỘC\n Từ 07 giờ ngày ${fmt(yesterday)} đến 07 giờ ngày ${fmt(d)}`;
+                document.getElementById('reportPeriodText').innerText = `TÌNH HÌNH KHÁM CHỮA BỆNH, TAI NẠN, NGỘ ĐỘC\n Từ 06 giờ ngày ${fmt(yesterday)} đến 06 giờ ngày ${fmt(d)}`;
             }
         }
 
@@ -1292,3 +1292,4 @@
 </body>
 
 </html>
+
