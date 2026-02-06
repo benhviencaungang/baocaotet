@@ -521,8 +521,8 @@
                         <div class="bg-indigo-600 text-white p-3 rounded-xl shadow-lg animate-bounce"><i
                                 class="fa-solid fa-file-excel text-2xl"></i></div>
                         <div>
-                            <h3 class="font-black text-indigo-900 uppercase text-sm">XUẤT BÁO CÁO EXCEL</h3>
-                            <p class="text-[11px] text-indigo-700 font-bold italic">Điền vào sheet MẪU và tải về</p>
+                            <h3 class="font-black text-indigo-900 uppercase text-sm">XUẤT BÁO CÁO</h3>
+                            <p class="text-[11px] text-indigo-700 font-bold italic">Xuất Excel hoặc PDF kèm chữ ký</p>
                         </div>
                     </div>
                     <button onclick="handleExportExcelPrompt()"
@@ -719,15 +719,23 @@
         </div>
     </main>
 
-    <!-- EXCEL MODAL -->
+    <!-- EXCEL/PDF MODAL -->
     <div id="excel-modal"
         class="hidden fixed inset-0 z-[250] flex items-center justify-center p-4 bg-indigo-950/80 backdrop-blur-md">
         <div
             class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border-4 border-indigo-100 animate-in fade-in zoom-in duration-300">
             <h2 class="text-xl font-black text-indigo-900 uppercase mb-6 text-center">Tùy chọn xuất báo cáo</h2>
             <div class="space-y-4 mb-8">
+                <!-- THÊM Ô NHẬP SỐ BÁO CÁO -->
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase italic mb-1 ml-1">Số báo cáo:</label>
+                    <input type="text" id="report-num"
+                        class="w-full border-2 border-slate-100 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm bg-slate-50"
+                        placeholder="Nhập số (VD: 123)...">
+                </div>
+
                 <div><label class="block text-[10px] font-black text-slate-400 uppercase italic mb-1 ml-1">Người lập
-                        biểu:</label><select id="sel-excel-rep"
+                        biểu (Ký tên):</label><select id="sel-excel-rep"
                         class="w-full border-2 border-slate-100 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm bg-slate-50">
                         <option value="Trần Quốc Huy">Trần Quốc Huy</option>
                         <option value="Giang Hoàng Tỷ">Giang Hoàng Tỷ</option>
@@ -744,12 +752,23 @@
                     </select></div>
             </div>
             <div class="space-y-3">
-                <button onclick="exportExcelByMode('single')"
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95"><i
-                        class="fa-solid fa-calendar-day"></i> Xuất tổng hợp 1 ngày</button>
-                <button onclick="exportExcelByMode('multi')"
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95"><i
-                        class="fa-solid fa-calendar-week"></i> Xuất tổng hợp nhiều ngày</button>
+                <button onclick="exportFile('excel', 'single')"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl font-black uppercase text-xs shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95"><i
+                        class="fa-solid fa-file-excel"></i> Xuất Excel 1 ngày</button>
+                <button onclick="exportFile('excel', 'multi')"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-2xl font-black uppercase text-xs shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95"><i
+                        class="fa-solid fa-file-csv"></i> Xuất Excel nhiều ngày</button>
+
+                <!-- NÚT PDF CŨ -->
+                <button onclick="exportFile('pdf', 'single')"
+                    class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-2xl font-black uppercase text-xs shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 border-t-4 border-red-500"><i
+                        class="fa-solid fa-file-pdf"></i> Xuất PDF 1 Ngày (Có chữ ký)</button>
+
+                <!-- NÚT MỚI: XUẤT PDF NHIỀU NGÀY -->
+                <button onclick="exportFile('pdf', 'multi')"
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-2xl font-black uppercase text-xs shadow-lg flex items-center justify-center gap-3 transition-all active:scale-95 border-t-4 border-orange-500"><i
+                        class="fa-solid fa-file-pdf"></i> Xuất PDF Nhiều Ngày (Có chữ ký)</button>
+
                 <button onclick="closeExcelModal()"
                     class="w-full bg-slate-100 hover:bg-slate-200 text-slate-500 py-3 rounded-2xl font-bold uppercase text-[10px] mt-4">Hủy
                     bỏ</button>
@@ -786,7 +805,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbx2RColaBRrAxnZCAQW_OPdpyvE3mLIqmWikaiIjqL4QU1Lo097tHpES7yE39GkMt2kqQ/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwEjru66exQdFRkPzYny1IxFRlV7kehKoqmtIqAyk6v6vgyUCxELQc4Rymx5zcw3-zY5g/exec";
         const departments = ["Nội", "Ngoại", "Sản", "Nhi", "Cấp Cứu", "YHCT", "Gây Mê"];
         const categories = ["Tai nạn giao thông*", "Tai nạn do pháo nổ*", "Tai nạn do vũ khí, vật liệu nổ tự chế*", "Ngộ độc thực phẩm", "Các đối tượng người bệnh còn lại"];
         const extraStatsDef = [
@@ -967,10 +986,12 @@
             document.getElementById('h-printLeaderName').innerText = name;
         }
 
-        // --- EXCEL ---
+        // --- EXCEL & PDF EXPORT ---
         function handleExportExcelPrompt() { if (!isAdmin) return; document.getElementById('excel-modal').classList.remove('hidden'); }
         function closeExcelModal() { document.getElementById('excel-modal').classList.add('hidden'); }
-        function exportExcelByMode(mode) {
+
+        // Updated function to handle both Excel and PDF
+        function exportFile(type, mode) {
             let date, sourceSheet;
             if (mode === 'single') {
                 date = document.getElementById('h-select-date').value || document.getElementById('reportDate').value;
@@ -980,22 +1001,34 @@
                 date = (khoaCurrent === "Tổng nhiều") ? document.getElementById('h-select-row').value : `${document.getElementById('h-multi-start').value}.${document.getElementById('h-multi-end').value}`;
                 sourceSheet = "Tổng nhiều";
             }
+
             if (!date || date.includes("Đang tải")) return alert("Vui lòng chọn ngày/đợt!");
+
             const reporter = document.getElementById('sel-excel-rep').value;
             const leader = document.getElementById('sel-excel-lead').value;
+            const reportNum = document.getElementById('report-num').value.trim(); // Lấy số báo cáo
+
             closeExcelModal();
+
             const loadingOverlay = document.createElement('div');
-            loadingOverlay.className = "fixed inset-0 z-[300] bg-black/50 flex items-center justify-center text-white font-black text-xs italic uppercase";
-            loadingOverlay.innerHTML = '<div class="loader mr-4"></div> ĐANG ĐIỀN DỮ LIỆU...';
+            loadingOverlay.className = "fixed inset-0 z-[300] bg-black/50 flex items-center justify-center text-white font-black text-xs italic uppercase flex-col gap-2";
+            loadingOverlay.innerHTML = `<div class="loader mr-4"></div> ${type === 'pdf' ? 'ĐANG CHÈN CHỮ KÝ & TẠO PDF...' : 'ĐANG ĐIỀN DỮ LIỆU EXCEL...'}`;
             document.body.appendChild(loadingOverlay);
-            window.handleFillResult = function (res) {
+
+            window.handleExportResult = function (res) {
                 loadingOverlay.remove();
-                if (res.result === "success") { window.location.href = res.downloadUrl; } else { alert("Lỗi: " + res.message); }
-                const s = document.getElementById('jsonp-fill-template'); if (s) s.remove();
+                if (res.result === "success") {
+                    window.open(res.downloadUrl, '_blank');
+                } else {
+                    alert("Lỗi: " + res.message);
+                }
+                const s = document.getElementById('jsonp-export'); if (s) s.remove();
             };
-            const script = document.createElement('script'); script.id = 'jsonp-fill-template';
-            // REMOVED &exportType=${mode} FROM URL
-            script.src = `${GAS_URL}?action=fill_template&sourceSheet=${encodeURIComponent(sourceSheet)}&date=${encodeURIComponent(date)}&rep=${encodeURIComponent(reporter)}&lead=${encodeURIComponent(leader)}&callback=handleFillResult`;
+
+            const action = type === 'pdf' ? 'export_pdf' : 'fill_template';
+            const script = document.createElement('script'); script.id = 'jsonp-export';
+            // Thêm tham số &reportNum=${encodeURIComponent(reportNum)}
+            script.src = `${GAS_URL}?action=${action}&sourceSheet=${encodeURIComponent(sourceSheet)}&date=${encodeURIComponent(date)}&rep=${encodeURIComponent(reporter)}&lead=${encodeURIComponent(leader)}&reportNum=${encodeURIComponent(reportNum)}&callback=handleExportResult`;
             document.body.appendChild(script);
         }
 
@@ -1292,4 +1325,3 @@
 </body>
 
 </html>
-
