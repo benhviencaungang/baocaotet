@@ -143,16 +143,27 @@
                 margin-top: 1mm !important;
             }
 
+            /* --- CẬP NHẬT CSS CHO CHỮ KÝ TO HƠN --- */
             .signature-section {
-                margin-top: 2mm !important;
+                margin-top: 5mm !important;
                 page-break-inside: avoid !important;
                 display: grid !important;
                 grid-template-columns: 1fr 1fr !important;
+                font-size: 11pt !important; /* Tăng size chữ tiêu đề */
             }
 
             .signature-space {
                 height: 3.5cm !important;
                 display: block !important;
+            }
+
+            /* Tên người ký to và đậm hơn */
+            .signature-name {
+                font-size: 14pt !important; 
+                font-weight: 900 !important;
+                text-transform: uppercase !important;
+                display: block !important;
+                width: 100% !important;
             }
 
             .bg-indigo-50,
@@ -412,16 +423,17 @@
             </div>
 
             <!-- Signature Section (Only Print) -->
-            <div class="hidden print:grid grid-cols-2 gap-4 mt-6 text-center text-[10pt] signature-section">
+            <!-- ĐÃ CẬP NHẬT: TĂNG CỠ CHỮ -->
+            <div class="hidden print:grid grid-cols-2 gap-4 mt-6 text-center signature-section">
                 <div>
                     <p class="font-bold uppercase">Người lập biểu</p>
                     <div class="signature-space"></div> <!-- Khoảng trống ký tên -->
-                    <p class="font-extrabold" id="printReporter">...</p>
+                    <p class="signature-name" id="printReporter">...</p>
                 </div>
                 <div>
                     <p class="font-bold uppercase" id="printLeaderTitle">Lãnh đạo trực đơn vị</p>
                     <div class="signature-space"></div> <!-- Khoảng trống ký tên -->
-                    <p class="font-extrabold" id="printLeaderName">...</p>
+                    <p class="signature-name" id="printLeaderName">...</p>
                 </div>
             </div>
 
@@ -696,14 +708,15 @@
                         </div>
                     </div>
 
-                    <div class="p-6 grid grid-cols-2 gap-4 text-center text-[10pt] signature-section">
+                    <!-- ĐÃ CẬP NHẬT: TĂNG CỠ CHỮ PHẦN ADMIN XEM LẠI -->
+                    <div class="p-6 grid grid-cols-2 gap-4 text-center signature-section">
                         <div>
                             <p class="font-bold uppercase">Người lập biểu</p>
                             <div class="signature-space"></div>
                             <input type="text" id="h-reporter-val"
                                 class="no-print w-full text-center border-b font-extrabold outline-none bg-transparent"
                                 placeholder="...">
-                            <p class="hidden print:block font-extrabold" id="h-printReporter">...</p>
+                            <p class="hidden print:block signature-name" id="h-printReporter">...</p>
                         </div>
                         <div>
                             <p class="font-bold uppercase" id="h-printLeaderTitle">Lãnh đạo trực đơn vị</p>
@@ -711,7 +724,7 @@
                             <input type="text" id="h-leader-val"
                                 class="no-print w-full text-center border-b font-extrabold outline-none bg-transparent"
                                 placeholder="..." oninput="updateHLeaderTitle()">
-                            <p class="hidden print:block font-extrabold" id="h-printLeaderName">...</p>
+                            <p class="hidden print:block signature-name" id="h-printLeaderName">...</p>
                         </div>
                     </div>
                 </div>
@@ -805,7 +818,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwEjru66exQdFRkPzYny1IxFRlV7kehKoqmtIqAyk6v6vgyUCxELQc4Rymx5zcw3-zY5g/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxwUUmyNwELVP9bUkCOKzJ6I8uGS_OxZU4d9D8gRAMFkoFe4K5tME8PqtmaEa7MgpKbMA/exec";
         const departments = ["Nội", "Ngoại", "Sản", "Nhi", "Cấp Cứu", "YHCT", "Gây Mê"];
         const categories = ["Tai nạn giao thông*", "Tai nạn do pháo nổ*", "Tai nạn do vũ khí, vật liệu nổ tự chế*", "Ngộ độc thực phẩm", "Các đối tượng người bệnh còn lại"];
         const extraStatsDef = [
