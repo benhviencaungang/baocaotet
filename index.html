@@ -818,7 +818,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxwUUmyNwELVP9bUkCOKzJ6I8uGS_OxZU4d9D8gRAMFkoFe4K5tME8PqtmaEa7MgpKbMA/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyK0GNOMUu_NnDbVxUWYP92nHnJ1FD7ovfHM_-ziQcGbRjXKt1f1QjBTToHZGBEuypB2g/exec";
         const departments = ["Nội", "Ngoại", "Sản", "Nhi", "Cấp Cứu", "YHCT", "Gây Mê"];
         const categories = ["Tai nạn giao thông*", "Tai nạn do pháo nổ*", "Tai nạn do vũ khí, vật liệu nổ tự chế*", "Ngộ độc thực phẩm", "Các đối tượng người bệnh còn lại"];
         const extraStatsDef = [
@@ -966,16 +966,24 @@
 
         function calculateHTotals() {
             const totals = Array(12).fill(0);
+            let totalChuyenVienNoi = 0; // Biến tính tổng chuyển viện nội (cột 5)
+
             for (let r = 0; r < categories.length; r++) {
                 const getV = (c) => parseInt(document.querySelector(`input[data-hrow="${r}"][data-hcol="${c}"]`).value) || 0;
-                // REMOVED AUTO CALC FOR COL 10 (BN Hiện Có)
-                // const hienCo = getV(0) + getV(3) - (getV(4) + getV(5)) - getV(6) - getV(8);
-                // document.querySelector(`input[data-hrow="${r}"][data-hcol="10"]`).value = hienCo;
+                
+                // Cột 5 là Chuyển tuyến Nội
+                totalChuyenVienNoi += getV(5);
 
                 // Vẫn tính tổng dọc
                 for (let c = 0; c < 12; c++) totals[c] += getV(c);
             }
             totals.forEach((v, i) => document.querySelector(`td[data-hfcol="${i}"]`).innerText = v);
+
+            // Cập nhật số xe cứu thương (h-val-xeCuuThuong) luôn bằng tổng cột Chuyển tuyến Nội
+            const ambulanceInput = document.getElementById('h-val-xeCuuThuong');
+            if (ambulanceInput) {
+                ambulanceInput.value = totalChuyenVienNoi;
+            }
         }
 
         function updateHDateStrings(dateVal) {
@@ -1202,13 +1210,10 @@
             }
             totals.forEach((v, i) => document.querySelector(`td[data-fcol="${i}"]`).innerText = v);
 
-            // CHANGED LOGIC: Auto-fill Ambulance when editing ANY Chuyen Tuyen Noi cell (Col 5)
-            // It sums up Col 5 across ALL rows.
-            if (src && src.dataset && src.dataset.col === "5") {
-                const ambulanceInput = document.getElementById('xeCuuThuong');
-                if (ambulanceInput) {
-                    ambulanceInput.value = totalChuyenVienNoi;
-                }
+            // CẬP NHẬT: Số lượt xe cứu thương luôn bằng Tổng Chuyển tuyến Nội (Cột 5)
+            const ambulanceInput = document.getElementById('xeCuuThuong');
+            if (ambulanceInput) {
+                ambulanceInput.value = totalChuyenVienNoi;
             }
         }
 
