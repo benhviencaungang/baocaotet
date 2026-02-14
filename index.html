@@ -149,7 +149,8 @@
                 page-break-inside: avoid !important;
                 display: grid !important;
                 grid-template-columns: 1fr 1fr !important;
-                font-size: 11pt !important; /* Tăng size chữ tiêu đề */
+                font-size: 11pt !important;
+                /* Tăng size chữ tiêu đề */
             }
 
             .signature-space {
@@ -159,7 +160,7 @@
 
             /* Tên người ký to và đậm hơn */
             .signature-name {
-                font-size: 14pt !important; 
+                font-size: 14pt !important;
                 font-weight: 900 !important;
                 text-transform: uppercase !important;
                 display: block !important;
@@ -708,7 +709,6 @@
                         </div>
                     </div>
 
-                    <!-- ĐÃ CẬP NHẬT: TĂNG CỠ CHỮ PHẦN ADMIN XEM LẠI -->
                     <div class="p-6 grid grid-cols-2 gap-4 text-center signature-section">
                         <div>
                             <p class="font-bold uppercase">Người lập biểu</p>
@@ -741,7 +741,8 @@
             <div class="space-y-4 mb-8">
                 <!-- THÊM Ô NHẬP SỐ BÁO CÁO -->
                 <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase italic mb-1 ml-1">Số báo cáo:</label>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase italic mb-1 ml-1">Số báo
+                        cáo:</label>
                     <input type="text" id="report-num"
                         class="w-full border-2 border-slate-100 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm bg-slate-50"
                         placeholder="Nhập số (VD: 123)...">
@@ -966,24 +967,16 @@
 
         function calculateHTotals() {
             const totals = Array(12).fill(0);
-            let totalChuyenVienNoi = 0; // Biến tính tổng chuyển viện nội (cột 5)
-
             for (let r = 0; r < categories.length; r++) {
                 const getV = (c) => parseInt(document.querySelector(`input[data-hrow="${r}"][data-hcol="${c}"]`).value) || 0;
-                
-                // Cột 5 là Chuyển tuyến Nội
-                totalChuyenVienNoi += getV(5);
+                // REMOVED AUTO CALC FOR COL 10 (BN Hiện Có)
+                // const hienCo = getV(0) + getV(3) - (getV(4) + getV(5)) - getV(6) - getV(8);
+                // document.querySelector(`input[data-hrow="${r}"][data-hcol="10"]`).value = hienCo;
 
                 // Vẫn tính tổng dọc
                 for (let c = 0; c < 12; c++) totals[c] += getV(c);
             }
             totals.forEach((v, i) => document.querySelector(`td[data-hfcol="${i}"]`).innerText = v);
-
-            // Cập nhật số xe cứu thương (h-val-xeCuuThuong) luôn bằng tổng cột Chuyển tuyến Nội
-            const ambulanceInput = document.getElementById('h-val-xeCuuThuong');
-            if (ambulanceInput) {
-                ambulanceInput.value = totalChuyenVienNoi;
-            }
         }
 
         function updateHDateStrings(dateVal) {
@@ -1167,6 +1160,48 @@
                 target.innerHTML += `<tr class="border-b border-slate-200 print:border-black"><td class="border-r border-slate-200 w-10 text-center font-bold bg-slate-50/50 text-slate-400 print:text-[9px] print:bg-white print:text-black print:border-black">${stat.stt || ''}</td><td class="text-left px-3 ${stat.isSub ? 'indent-item text-[10px] print:text-[8.5px] print:text-black' : 'font-bold text-[11px] text-slate-700 print:text-[9.5px] print:text-black'}">${stat.label}</td><td class="w-28 p-0 bg-white border-l print:border-black"><div class="flex items-center px-2"><input type="number" id="${stat.id}" value="0" onfocus="this.select()" ${isPtKhac ? 'readonly' : 'oninput="calculateSurgeries(this)"'} class="w-full text-right font-black text-blue-700 outline-none p-1.5 text-[12px] bg-transparent ${isPtKhac ? 'input-readonly-custom' : 'input-focus'} print:text-[11px] print:text-black">${stat.suffix ? `<span class="text-[9px] text-slate-400 font-bold ml-1 print:text-[8px] print:text-black">${stat.suffix}</span>` : ''}</div></td></tr>`;
             });
             syncDepartment(); fetchPrevDataSummary(); updateSignatures(); updateAdminUI();
+
+            // THÊM: Tự động kiểm tra và cập nhật ngày mới mỗi phút
+            setInterval(checkAndAutoUpdateDate, 60000);
+        }
+
+        function checkAndAutoUpdateDate() {
+            const reportInput = document.getElementById('reportDate');
+            if (!reportInput || !reportInput.value) return;
+
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${y}-${m}-${d}`;
+
+            // Tính ngày hôm qua
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const yYear = yesterday.getFullYear();
+            const yMonth = String(yesterday.getMonth() + 1).padStart(2, '0');
+            const yDay = String(yesterday.getDate()).padStart(2, '0');
+            const yesterdayStr = `${yYear}-${yMonth}-${yDay}`;
+
+            // Nếu input đang là ngày hôm qua (do treo máy qua đêm), cập nhật lên hôm nay
+            if (reportInput.value === yesterdayStr) {
+                reportInput.value = todayStr;
+
+                // Cập nhật cả bên history nếu nó cũng đang là hôm qua
+                const hInput = document.getElementById('h-select-date');
+                if (hInput && hInput.value === yesterdayStr) {
+                    hInput.value = todayStr;
+                }
+
+                // Cập nhật UI và Data
+                updateDateString();
+                // Reset bảng về 0 vì qua ngày mới
+                resetTableData();
+                // Load lại số liệu BN cũ của ngày mới
+                fetchPrevDataSummary();
+
+                console.log("Hệ thống đã tự động cập nhật sang ngày mới:", todayStr);
+            }
         }
 
         // --- NEW LOGIC: RESET TABLE WHEN DEPT CHANGES ---
@@ -1255,23 +1290,51 @@
             document.getElementById('printLeaderTitle').innerText = title;
         }
 
-        // --- FIX QUAN TRỌNG: GỬI DỮ LIỆU KÈM SĐT ---
+        // --- FIX QUAN TRỌNG: GỬI DỮ LIỆU KÈM SĐT VÀ KIỂM TRA ĐÃ TỒN TẠI ---
         async function submitData() {
             const r = document.getElementById('reporter').value.trim();
             const l = document.getElementById('leader').value.trim();
             const phone = document.getElementById('reporterPhone').value.trim(); // Lấy SĐT
+            const dept = document.getElementById('department').value;
+            const reportDateVal = document.getElementById('reportDate').value;
 
             if (!r || !l) return alert("Vui lòng điền đủ tên Người lập và Lãnh đạo!");
             if (!phone) return alert("Vui lòng nhập Số điện thoại liên hệ!"); // Ràng buộc SĐT
 
             const btn = document.getElementById('btnSubmit');
             btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang kiểm tra...';
+
+            // --- KIỂM TRA BÁO CÁO CŨ (NEW) ---
+            const checkExists = () => {
+                return new Promise(resolve => {
+                    const cbName = 'check_exist_' + Date.now();
+                    window[cbName] = (res) => {
+                        delete window[cbName];
+                        const el = document.getElementById('script-' + cbName);
+                        if (el) el.remove();
+                        resolve(res.result === 'success');
+                    };
+                    const script = document.createElement('script');
+                    script.id = 'script-' + cbName;
+                    script.src = `${GAS_URL}?action=get_prev_data&khoa=${encodeURIComponent(dept)}&date=${reportDateVal}&callback=${cbName}`;
+                    document.body.appendChild(script);
+                });
+            };
+
+            const alreadyReported = await checkExists();
+
+            if (alreadyReported) {
+                alert("Đã báo cáo rồi! Liên Hệ Huỳnh để xóa báo cáo củ");
+                btn.disabled = false;
+                btn.innerHTML = "Gửi dữ liệu báo cáo <i class='fa-solid fa-paper-plane ml-1.5'></i>";
+                return; // Dừng lại không gửi
+            }
+
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang gửi...';
 
-            const reportDateVal = document.getElementById('reportDate').value;
-
             // THÊM SĐT VÀO MẢNG rowValues (sau người lập, trước lãnh đạo)
-            const rowValues = [new Date(), document.getElementById('department').value, reportDateVal, r, phone, l];
+            const rowValues = [new Date(), dept, reportDateVal, r, phone, l];
 
             for (let rIdx = 0; rIdx < categories.length; rIdx++) { for (let cIdx = 0; cIdx < 12; cIdx++) rowValues.push(parseInt(document.querySelector(`input[data-row="${rIdx}"][data-col="${cIdx}"]`).value) || 0); }
             extraStatsDef.forEach(s => rowValues.push(parseInt(document.getElementById(s.id).value) || 0));
@@ -1283,7 +1346,7 @@
                     mode: 'no-cors',
                     body: JSON.stringify({
                         action: 'submit',
-                        khoa: document.getElementById('department').value,
+                        khoa: dept,
                         reportDate: reportDateVal,
                         rowValues: rowValues
                     })
@@ -1343,4 +1406,3 @@
 </body>
 
 </html>
-
