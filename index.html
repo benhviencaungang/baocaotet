@@ -47,6 +47,11 @@
                 display: inline !important;
             }
 
+            /* THÊM: Ẩn các hàng dữ liệu cũ khi in nếu nó đang bị ẩn trên màn hình */
+            .legacy-row.hidden {
+                display: none !important;
+            }
+
             body {
                 background: white !important;
                 color: black !important;
@@ -477,6 +482,10 @@
                         <button onclick="logoutAdmin()"
                             class="ml-2 bg-black/20 hover:bg-black/30 p-1 px-2 rounded">Thoát</button>
                     </div>
+                    <!-- THÊM NÚT ẨN HIỆN ĐƯỢC ĐIỀU KHIỂN TỪ SERVER -->
+                    <button id="btnToggleLegacy" onclick="toggleLegacyRows()" class="hidden bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-black text-xs uppercase flex items-center gap-2 transition-all shadow disabled:opacity-50">
+                        <i class="fa-solid fa-spinner fa-spin hidden"></i> <span>Hiện dữ liệu cũ</span>
+                    </button>
                 </div>
             </div>
 
@@ -819,7 +828,7 @@
     </div>
 
     <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbypMvjBOOC53ozbO2nsRhk9gxlWPGjfjtDUPW8ZxxpqtjhEhl2SN5ZdNVwikL4hx-wU2g/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzQrLPy12yoVcHJthgAARF0VVsj0BVBoOJExdZHrL5KHMVRry7d5dTLCBzNsFqT-Bn5YA/exec";
         const departments = ["Nội", "Ngoại", "Sản", "Nhi", "Cấp Cứu", "YHCT", "Gây Mê"];
         const categories = ["Tai nạn giao thông*", "Tai nạn do pháo nổ*", "Tai nạn do vũ khí, vật liệu nổ tự chế*", "Ngộ độc thực phẩm", "Các đối tượng người bệnh còn lại"];
         const extraStatsDef = [
@@ -835,6 +844,9 @@
 
         let isAdmin = false;
         let lastRetrievedData = null;
+        
+        // Mặc định là false (ẩn), sẽ được cập nhật khi fetch từ Server về
+        let showLegacyRows = false; 
 
         function switchView(view) {
             const views = ['view-report', 'view-admin'];
@@ -844,6 +856,85 @@
             navs.forEach(n => { const el = document.getElementById(n); if (el) { el.classList.remove('bg-indigo-800', 'border-b-2', 'text-white'); el.classList.add('text-indigo-100'); } });
             const activeNav = document.getElementById(`nav-${view === 'admin' ? 'history' : 'report'}`);
             if (activeNav) { activeNav.classList.add('bg-indigo-800', 'border-b-2', 'text-white'); activeNav.classList.remove('text-indigo-100'); }
+        }
+
+        // --- HÀM ẨN/HIỆN PHẦN TỬ HTML ---
+        function applyLegacyVisibility() {
+            const rows = document.querySelectorAll('.legacy-row');
+            rows.forEach(row => {
+                if (showLegacyRows) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+        }
+
+        // --- HÀM CẬP NHẬT GIAO DIỆN NÚT ---
+        function updateLegacyButtonUI() {
+            const btn = document.getElementById('btnToggleLegacy');
+            if (!btn) return;
+            const icon = btn.querySelector('i');
+            const textSpan = btn.querySelector('span');
+
+            if(icon) icon.className = showLegacyRows ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+            if(textSpan) textSpan.innerText = showLegacyRows ? ' Ẩn dữ liệu cũ' : ' Hiện dữ liệu cũ';
+
+            if (showLegacyRows) {
+                btn.classList.remove('bg-slate-800', 'hover:bg-slate-700');
+                btn.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+            } else {
+                btn.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+                btn.classList.add('bg-slate-800', 'hover:bg-slate-700');
+            }
+        }
+
+        // --- HÀM LẤY TRẠNG THÁI TỪ SERVER KHI MỞ TRANG ---
+        function fetchLegacyState() {
+            window.handleGetLegacy = function(res) {
+                if(res.result === "success") {
+                    // Cập nhật biến dựa trên server trả về
+                    showLegacyRows = (res.show === true || res.show === "true");
+                    applyLegacyVisibility();
+                    updateLegacyButtonUI();
+                }
+                const s = document.getElementById('jsonp-get-legacy'); if(s) s.remove();
+            };
+            const script = document.createElement('script'); script.id = 'jsonp-get-legacy';
+            script.src = `${GAS_URL}?action=get_legacy_state&callback=handleGetLegacy`;
+            document.body.appendChild(script);
+        }
+
+        // --- HÀM ĐỔI TRẠNG THÁI VÀ LƯU LÊN SERVER ---
+        function toggleLegacyRows() {
+            if (!isAdmin) return; // Chỉ cho admin bấm
+            
+            showLegacyRows = !showLegacyRows;
+            
+            // Cập nhật giao diện ngay lập tức cho mượt
+            applyLegacyVisibility();
+            
+            // Đổi nút thành trạng thái đang lưu
+            const btn = document.getElementById('btnToggleLegacy');
+            const icon = btn.querySelector('i');
+            if(icon) icon.className = 'fa-solid fa-spinner fa-spin';
+            btn.disabled = true;
+
+            // Gửi dữ liệu lên Server
+            window.handleSetLegacy = function(res) {
+                btn.disabled = false;
+                if(res.result !== "success") {
+                    alert("Lỗi khi lưu trạng thái lên Server!");
+                    // Nếu lỗi thì hoàn tác
+                    showLegacyRows = !showLegacyRows; 
+                    applyLegacyVisibility();
+                }
+                updateLegacyButtonUI(); // Cập nhật lại nút
+                const s = document.getElementById('jsonp-set-legacy'); if(s) s.remove();
+            };
+            const script = document.createElement('script'); script.id = 'jsonp-set-legacy';
+            script.src = `${GAS_URL}?action=set_legacy_state&show=${showLegacyRows}&callback=handleSetLegacy`;
+            document.body.appendChild(script);
         }
 
         // --- AUTH ---
@@ -871,8 +962,23 @@
             const showBtn = document.getElementById('btnShowLogin');
             const dashboard = document.getElementById('admin-dashboard-area');
             const editControls = document.getElementById('admin-action-btns');
-            if (isAdmin) { badge.classList.remove('hidden'); showBtn.classList.add('hidden'); dashboard.classList.remove('hidden'); editControls.classList.remove('hidden'); }
-            else { badge.classList.add('hidden'); showBtn.classList.remove('hidden'); dashboard.classList.add('hidden'); editControls.classList.add('hidden'); }
+            const btnToggleLegacy = document.getElementById('btnToggleLegacy');
+
+            if (isAdmin) { 
+                badge.classList.remove('hidden'); 
+                showBtn.classList.add('hidden'); 
+                dashboard.classList.remove('hidden'); 
+                editControls.classList.remove('hidden'); 
+                btnToggleLegacy.classList.remove('hidden');
+                updateLegacyButtonUI(); 
+            }
+            else { 
+                badge.classList.add('hidden'); 
+                showBtn.classList.remove('hidden'); 
+                dashboard.classList.add('hidden'); 
+                editControls.classList.add('hidden'); 
+                btnToggleLegacy.classList.add('hidden');
+            }
             const hDeptSelect = document.getElementById('h-select-dept');
             const currentVal = hDeptSelect.value;
             hDeptSelect.innerHTML = '';
@@ -943,10 +1049,16 @@
             const tbody = document.getElementById('h-tableBody'); tbody.innerHTML = '';
             categories.forEach((name, rIdx) => {
                 const tr = document.createElement('tr');
+                
+                // THÊM CLASS ĐỂ QUẢN LÝ ẨN/HIỆN
+                if ([1, 2, 3].includes(rIdx)) {
+                    tr.classList.add('legacy-row');
+                    if (!showLegacyRows) tr.classList.add('hidden');
+                }
+
                 let html = `<td class="border border-slate-300 font-bold text-slate-400 bg-slate-50 print:bg-white print:border-black">${rIdx + 1}</td><td class="border border-slate-300 text-left px-3 font-bold text-slate-700 text-[11px] print:text-black print:border-black">${name}</td>`;
                 for (let cIdx = 0; cIdx < 12; cIdx++) {
                     const val = res.data[5 + (rIdx * 12) + cIdx] || 0;
-                    // Cột 10 không còn readonly nữa
                     const isReadOnly = !isAdmin;
                     html += `<td class="border border-slate-300 p-0 bg-white print:border-black"><input type="number" data-hrow="${rIdx}" data-hcol="${cIdx}" value="${val}" ${isReadOnly ? 'readonly' : 'oninput="calculateHTotals()"'} class="w-full text-center outline-none border-none font-bold text-[11px] py-2 ${(!isReadOnly && isAdmin) ? 'admin-editable' : ''}"></td>`;
                 }
@@ -969,11 +1081,6 @@
             const totals = Array(12).fill(0);
             for (let r = 0; r < categories.length; r++) {
                 const getV = (c) => parseInt(document.querySelector(`input[data-hrow="${r}"][data-hcol="${c}"]`).value) || 0;
-                // REMOVED AUTO CALC FOR COL 10 (BN Hiện Có)
-                // const hienCo = getV(0) + getV(3) - (getV(4) + getV(5)) - getV(6) - getV(8);
-                // document.querySelector(`input[data-hrow="${r}"][data-hcol="10"]`).value = hienCo;
-
-                // Vẫn tính tổng dọc
                 for (let c = 0; c < 12; c++) totals[c] += getV(c);
             }
             totals.forEach((v, i) => document.querySelector(`td[data-hfcol="${i}"]`).innerText = v);
@@ -1004,7 +1111,6 @@
         function handleExportExcelPrompt() { if (!isAdmin) return; document.getElementById('excel-modal').classList.remove('hidden'); }
         function closeExcelModal() { document.getElementById('excel-modal').classList.add('hidden'); }
 
-        // Updated function to handle both Excel and PDF
         function exportFile(type, mode) {
             let date, sourceSheet;
             if (mode === 'single') {
@@ -1041,7 +1147,6 @@
 
             const action = type === 'pdf' ? 'export_pdf' : 'fill_template';
             const script = document.createElement('script'); script.id = 'jsonp-export';
-            // Thêm tham số &reportNum=${encodeURIComponent(reportNum)}
             script.src = `${GAS_URL}?action=${action}&sourceSheet=${encodeURIComponent(sourceSheet)}&date=${encodeURIComponent(date)}&rep=${encodeURIComponent(reporter)}&lead=${encodeURIComponent(leader)}&reportNum=${encodeURIComponent(reportNum)}&callback=handleExportResult`;
             document.body.appendChild(script);
         }
@@ -1051,7 +1156,6 @@
             if (!isAdmin) return;
             const khoa = document.getElementById('h-res-khoa-info').innerText;
             const date = document.getElementById('h-res-ngay-info').innerText;
-            // NOTE: ADMIN UPDATE DOES NOT INCLUDE PHONE YET - ASSUMING ONLY REPORTING NEEDS IT
             const rowValues = [null, khoa, date, document.getElementById('h-reporter-val').value, document.getElementById('h-leader-val').value];
             for (let r = 0; r < categories.length; r++) { for (let c = 0; c < 12; c++) rowValues.push(parseInt(document.querySelector(`input[data-hrow="${r}"][data-hcol="${c}"]`).value) || 0); }
             extraStatsDef.forEach(s => rowValues.push(parseInt(document.getElementById(`h-val-${s.id}`).value) || 0));
@@ -1095,7 +1199,6 @@
             document.body.appendChild(script);
         }
 
-        // --- NEW: CHECK PROGRESS ---
         function handleCheckProgress() {
             let date = document.getElementById('h-select-date').value;
             if (!date) return alert("Vui lòng chọn ngày cần kiểm tra ở ô 'Chọn Ngày' bên dưới!");
@@ -1138,11 +1241,16 @@
             const tableBody = document.getElementById('tableBody');
             categories.forEach((name, idx) => {
                 const tr = document.createElement('tr');
+                
+                // THÊM CLASS ĐỂ QUẢN LÝ ẨN/HIỆN
+                if ([1, 2, 3].includes(idx)) {
+                    tr.classList.add('legacy-row');
+                    if (!showLegacyRows) tr.classList.add('hidden');
+                }
+
                 let html = `<td class="border border-slate-300 font-bold text-slate-400 bg-slate-50 print:bg-white print:border-black">${idx + 1}</td><td class="border border-slate-300 text-left px-3 font-bold text-slate-700 text-[11px] print:text-black print:border-black">${name}</td>`;
                 for (let i = 0; i < 12; i++) {
-                    // Cột 10 (BN Hiện có) giờ là nhập được, nhưng có thể style khác 1 chút
                     const isCol10 = (i === 10);
-                    // Bỏ readonly cho cột 10
                     html += `<td class="border border-slate-300 p-0 bg-white print:border-black"><input type="number" data-row="${idx}" data-col="${i}" value="0" onfocus="this.select()" oninput="calculateTotals(this)" class="input-focus font-bold ${isCol10 ? 'text-indigo-900 bg-indigo-50' : 'text-slate-800'} print:text-black print:bg-white" style="width:100%; text-align:center; outline:none; border:none; font-size:11px; padding:8px 0;"></td>`;
                 }
                 tr.innerHTML = html; tableBody.appendChild(tr);
@@ -1153,15 +1261,17 @@
             const extraRight = document.getElementById('extraStatsRight');
             extraStatsDef.forEach(stat => {
                 const target = ['phauThuat', 'ptCapCuu', 'ptKhac', 'tongSinh'].includes(stat.id) ? extraLeft : extraRight;
-
-                // Set ptKhac to readonly
                 const isPtKhac = stat.id === 'ptKhac';
-
                 target.innerHTML += `<tr class="border-b border-slate-200 print:border-black"><td class="border-r border-slate-200 w-10 text-center font-bold bg-slate-50/50 text-slate-400 print:text-[9px] print:bg-white print:text-black print:border-black">${stat.stt || ''}</td><td class="text-left px-3 ${stat.isSub ? 'indent-item text-[10px] print:text-[8.5px] print:text-black' : 'font-bold text-[11px] text-slate-700 print:text-[9.5px] print:text-black'}">${stat.label}</td><td class="w-28 p-0 bg-white border-l print:border-black"><div class="flex items-center px-2"><input type="number" id="${stat.id}" value="0" onfocus="this.select()" ${isPtKhac ? 'readonly' : 'oninput="calculateSurgeries(this)"'} class="w-full text-right font-black text-blue-700 outline-none p-1.5 text-[12px] bg-transparent ${isPtKhac ? 'input-readonly-custom' : 'input-focus'} print:text-[11px] print:text-black">${stat.suffix ? `<span class="text-[9px] text-slate-400 font-bold ml-1 print:text-[8px] print:text-black">${stat.suffix}</span>` : ''}</div></td></tr>`;
             });
-            syncDepartment(); fetchPrevDataSummary(); updateSignatures(); updateAdminUI();
+            syncDepartment(); 
+            fetchPrevDataSummary(); 
+            updateSignatures(); 
+            updateAdminUI();
 
-            // THÊM: Tự động kiểm tra và cập nhật ngày mới mỗi phút
+            // GỌI HÀM LẤY TRẠNG THÁI TỪ SERVER KHI VỪA MỞ TRANG
+            fetchLegacyState();
+
             setInterval(checkAndAutoUpdateDate, 60000);
         }
 
@@ -1175,7 +1285,6 @@
             const d = String(now.getDate()).padStart(2, '0');
             const todayStr = `${y}-${m}-${d}`;
 
-            // Tính ngày hôm qua
             const yesterday = new Date(now);
             yesterday.setDate(now.getDate() - 1);
             const yYear = yesterday.getFullYear();
@@ -1183,85 +1292,58 @@
             const yDay = String(yesterday.getDate()).padStart(2, '0');
             const yesterdayStr = `${yYear}-${yMonth}-${yDay}`;
 
-            // Nếu input đang là ngày hôm qua (do treo máy qua đêm), cập nhật lên hôm nay
             if (reportInput.value === yesterdayStr) {
                 reportInput.value = todayStr;
 
-                // Cập nhật cả bên history nếu nó cũng đang là hôm qua
                 const hInput = document.getElementById('h-select-date');
                 if (hInput && hInput.value === yesterdayStr) {
                     hInput.value = todayStr;
                 }
 
-                // Cập nhật UI và Data
                 updateDateString();
-                // Reset bảng về 0 vì qua ngày mới
                 resetTableData();
-                // Load lại số liệu BN cũ của ngày mới
                 fetchPrevDataSummary();
-
-                console.log("Hệ thống đã tự động cập nhật sang ngày mới:", todayStr);
             }
         }
 
-        // --- NEW LOGIC: RESET TABLE WHEN DEPT CHANGES ---
         function resetTableData() {
-            // Reset main table inputs to 0
             document.querySelectorAll('#tableBody input').forEach(input => {
                 input.value = 0;
-                // Nếu đang ở col 0, reset readonly state luôn cho chắc (sẽ được fetchPrevDataSummary xử lý lại)
                 if (input.dataset.col == "0") {
                     input.readOnly = false;
                     input.classList.remove('input-readonly-custom');
                 }
             });
 
-            // Reset extra stats to 0
             document.querySelectorAll('#extraStatsLeft input, #extraStatsRight input').forEach(input => input.value = 0);
 
-            // Reset Ambulance specifically to 0 on dept change
             const amb = document.getElementById('xeCuuThuong');
             if (amb) amb.value = 0;
 
-            // Recalculate totals to update footer and dependent fields
             calculateTotals();
         }
 
         function calculateTotals(src) {
             const totals = Array(12).fill(0);
-            let totalChuyenVienNoi = 0; // Biến tính tổng chuyển viện nội (cột 5)
+            let totalChuyenVienNoi = 0;
 
             for (let r = 0; r < categories.length; r++) {
                 const getV = (c) => parseInt(document.querySelector(`input[data-row="${r}"][data-col="${c}"]`).value) || 0;
-
-                // Cột 5 là Chuyển tuyến Nội
                 totalChuyenVienNoi += getV(5);
-
-                // --- ĐÃ BỎ TỰ ĐỘNG TÍNH BN HIỆN CÓ (Cột 10) ---
-                // Chỉ lấy giá trị người dùng nhập vào để cộng tổng dọc
-                const hienCo = getV(10);
-
                 for (let c = 0; c < 12; c++) totals[c] += getV(c);
             }
             totals.forEach((v, i) => document.querySelector(`td[data-fcol="${i}"]`).innerText = v);
 
-            // CẬP NHẬT: Số lượt xe cứu thương luôn bằng Tổng Chuyển tuyến Nội (Cột 5)
             const ambulanceInput = document.getElementById('xeCuuThuong');
             if (ambulanceInput) {
                 ambulanceInput.value = totalChuyenVienNoi;
             }
         }
 
-        // --- TÍNH TOÁN PHẪU THUẬT ---
         function calculateSurgeries(src) {
-            // Nếu người dùng nhập vào ptKhac thì không làm gì (nó readonly rồi)
-            // Tính toán ptKhac = phauThuat - ptCapCuu
             const totalSurg = parseInt(document.getElementById('phauThuat').value) || 0;
             const emergencySurg = parseInt(document.getElementById('ptCapCuu').value) || 0;
-
             const otherSurg = totalSurg - emergencySurg;
-
-            // Không cho số âm
             const finalVal = otherSurg > 0 ? otherSurg : 0;
             document.getElementById('ptKhac').value = finalVal;
         }
@@ -1278,7 +1360,6 @@
 
         function syncDepartment() {
             document.getElementById('printDepartment').innerText = document.getElementById('department').value;
-            // Clear old data when switching department
             resetTableData();
         }
 
@@ -1290,22 +1371,20 @@
             document.getElementById('printLeaderTitle').innerText = title;
         }
 
-        // --- FIX QUAN TRỌNG: GỬI DỮ LIỆU KÈM SĐT VÀ KIỂM TRA ĐÃ TỒN TẠI ---
         async function submitData() {
             const r = document.getElementById('reporter').value.trim();
             const l = document.getElementById('leader').value.trim();
-            const phone = document.getElementById('reporterPhone').value.trim(); // Lấy SĐT
+            const phone = document.getElementById('reporterPhone').value.trim();
             const dept = document.getElementById('department').value;
             const reportDateVal = document.getElementById('reportDate').value;
 
             if (!r || !l) return alert("Vui lòng điền đủ tên Người lập và Lãnh đạo!");
-            if (!phone) return alert("Vui lòng nhập Số điện thoại liên hệ!"); // Ràng buộc SĐT
+            if (!phone) return alert("Vui lòng nhập Số điện thoại liên hệ!");
 
             const btn = document.getElementById('btnSubmit');
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang kiểm tra...';
 
-            // --- KIỂM TRA BÁO CÁO CŨ (NEW) ---
             const checkExists = () => {
                 return new Promise(resolve => {
                     const cbName = 'check_exist_' + Date.now();
@@ -1328,12 +1407,11 @@
                 alert("Đã báo cáo rồi! Liên Hệ Huỳnh để xóa báo cáo củ");
                 btn.disabled = false;
                 btn.innerHTML = "Gửi dữ liệu báo cáo <i class='fa-solid fa-paper-plane ml-1.5'></i>";
-                return; // Dừng lại không gửi
+                return;
             }
 
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang gửi...';
 
-            // THÊM SĐT VÀO MẢNG rowValues (sau người lập, trước lãnh đạo)
             const rowValues = [new Date(), dept, reportDateVal, r, phone, l];
 
             for (let rIdx = 0; rIdx < categories.length; rIdx++) { for (let cIdx = 0; cIdx < 12; cIdx++) rowValues.push(parseInt(document.querySelector(`input[data-row="${rIdx}"][data-col="${cIdx}"]`).value) || 0); }
@@ -1374,21 +1452,20 @@
                         if (input) {
                             input.value = val;
                             input.classList.remove('bg-white');
-                            input.classList.add('input-readonly-custom'); // Thêm class xám
-                            input.readOnly = true; // KHÓA KHÔNG CHO SỬA
+                            input.classList.add('input-readonly-custom');
+                            input.readOnly = true;
                         }
                     });
                     calculateTotals();
                 } else {
                     document.getElementById('prev-summary-text').innerHTML = `<span class="text-slate-500 italic">Ngày ${yesterdayStr} chưa báo cáo.</span>`;
-                    // Reset BN Cũ to 0 when not found AND UNLOCK
                     for (let idx = 0; idx < categories.length; idx++) {
                         const input = document.querySelector(`input[data-row="${idx}"][data-col="0"]`);
                         if (input) {
                             input.value = 0;
-                            input.classList.remove('input-readonly-custom'); // Bỏ class xám
+                            input.classList.remove('input-readonly-custom');
                             input.classList.add('bg-white');
-                            input.readOnly = false; // MỞ KHÓA CHO NHẬP
+                            input.readOnly = false;
                         }
                     }
                     calculateTotals();
@@ -1406,6 +1483,3 @@
 </body>
 
 </html>
-
-
-
