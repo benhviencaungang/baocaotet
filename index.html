@@ -868,6 +868,13 @@
                     row.classList.add('hidden');
                 }
             });
+
+            // Đổi tên hiển thị của dòng index 1 (Pháo nổ <-> COVID-19)
+            const catName1 = document.getElementById('cat-name-1');
+            if (catName1) catName1.innerText = showLegacyRows ? "Tai nạn do pháo nổ*" : "COVID-19";
+
+            const hCatName1 = document.getElementById('h-cat-name-1');
+            if (hCatName1) hCatName1.innerText = showLegacyRows ? "Tai nạn do pháo nổ*" : "COVID-19";
         }
 
         // --- HÀM CẬP NHẬT GIAO DIỆN NÚT ---
@@ -1050,13 +1057,16 @@
             categories.forEach((name, rIdx) => {
                 const tr = document.createElement('tr');
                 
-                // THÊM CLASS ĐỂ QUẢN LÝ ẨN/HIỆN
-                if ([1, 2, 3].includes(rIdx)) {
+                // THÊM CLASS ĐỂ QUẢN LÝ ẨN/HIỆN (Chỉ ẩn index 2 và 3)
+                if ([2, 3].includes(rIdx)) {
                     tr.classList.add('legacy-row');
                     if (!showLegacyRows) tr.classList.add('hidden');
                 }
 
-                let html = `<td class="border border-slate-300 font-bold text-slate-400 bg-slate-50 print:bg-white print:border-black">${rIdx + 1}</td><td class="border border-slate-300 text-left px-3 font-bold text-slate-700 text-[11px] print:text-black print:border-black">${name}</td>`;
+                let displayName = name;
+                if (rIdx === 1) displayName = showLegacyRows ? "Tai nạn do pháo nổ*" : "COVID-19";
+
+                let html = `<td class="border border-slate-300 font-bold text-slate-400 bg-slate-50 print:bg-white print:border-black">${rIdx + 1}</td><td id="h-cat-name-${rIdx}" class="border border-slate-300 text-left px-3 font-bold text-slate-700 text-[11px] print:text-black print:border-black">${displayName}</td>`;
                 for (let cIdx = 0; cIdx < 12; cIdx++) {
                     const val = res.data[5 + (rIdx * 12) + cIdx] || 0;
                     const isReadOnly = !isAdmin;
@@ -1242,13 +1252,16 @@
             categories.forEach((name, idx) => {
                 const tr = document.createElement('tr');
                 
-                // THÊM CLASS ĐỂ QUẢN LÝ ẨN/HIỆN
-                if ([1, 2, 3].includes(idx)) {
+                // THÊM CLASS ĐỂ QUẢN LÝ ẨN/HIỆN (Chỉ ẩn index 2 và 3)
+                if ([2, 3].includes(idx)) {
                     tr.classList.add('legacy-row');
                     if (!showLegacyRows) tr.classList.add('hidden');
                 }
 
-                let html = `<td class="border border-slate-300 font-bold text-slate-400 bg-slate-50 print:bg-white print:border-black">${idx + 1}</td><td class="border border-slate-300 text-left px-3 font-bold text-slate-700 text-[11px] print:text-black print:border-black">${name}</td>`;
+                let displayName = name;
+                if (idx === 1) displayName = showLegacyRows ? "Tai nạn do pháo nổ*" : "COVID-19";
+
+                let html = `<td class="border border-slate-300 font-bold text-slate-400 bg-slate-50 print:bg-white print:border-black">${idx + 1}</td><td id="cat-name-${idx}" class="border border-slate-300 text-left px-3 font-bold text-slate-700 text-[11px] print:text-black print:border-black">${displayName}</td>`;
                 for (let i = 0; i < 12; i++) {
                     const isCol10 = (i === 10);
                     html += `<td class="border border-slate-300 p-0 bg-white print:border-black"><input type="number" data-row="${idx}" data-col="${i}" value="0" onfocus="this.select()" oninput="calculateTotals(this)" class="input-focus font-bold ${isCol10 ? 'text-indigo-900 bg-indigo-50' : 'text-slate-800'} print:text-black print:bg-white" style="width:100%; text-align:center; outline:none; border:none; font-size:11px; padding:8px 0;"></td>`;
